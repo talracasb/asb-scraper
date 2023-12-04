@@ -15,7 +15,9 @@ async fn main() {
         .unwrap();
 
     let api = Router::new()
-        .route("/test", get(myasb::handlers::day))
+        .route("/home", get(myasb::handlers::home))
+        .route("/courses/list", get(myasb::handlers::courses_list))
+        .route("/courses/:student/:year/:id", get(myasb::handlers::course))
         .with_state(AppState { client });
 
     let app = Router::new().nest("/api", api);

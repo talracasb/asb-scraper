@@ -1,13 +1,16 @@
 use axum::{
     debug_handler,
-    extract::State,
+    extract::{Path, State},
     http::{HeaderMap, StatusCode},
     Json,
 };
 use serde::{Deserialize, Serialize};
 
-use crate::scraper;
-use crate::AppState;
+use crate::{
+    last,
+    scraper::{self, Course, CourseListitem, Home},
+    AppState,
+};
 
 // Helper function to get the session ID from the header map and return HTTP 400 if it doesn't exist.
 fn session_id(headers: &HeaderMap) -> Result<&str, StatusCode> {
@@ -21,16 +24,11 @@ fn session_id(headers: &HeaderMap) -> Result<&str, StatusCode> {
     Ok(session_id)
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct Day {
-    pub text: String,
-}
-
 #[debug_handler]
-pub async fn day(
+pub async fn home(
     headers: HeaderMap,
     State(state): State<AppState>,
-) -> Result<Json<Day>, StatusCode> {
+) -> Result<Json<Home>, StatusCode> {
     let session_id = session_id(&headers)?;
 
     let resp = state
@@ -42,7 +40,66 @@ pub async fn day(
         .unwrap();
 
     let html = resp.text().await.unwrap();
-    let text = scraper::day(&html);
+    let home = scraper::home(&html);
 
-    Ok(Json(Day { text }))
+    Ok(Json(home))
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Courses {
+    pub year_id: u16,
+    pub courses: Box<[CourseListitem]>,
+}
+
+#[debug_handler]
+pub async fn courses_list(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+) -> Result<Json<Courses>, StatusCode> {
+    let session_id = session_id(&headers)?;
+
+    let resp = state
+        .client
+        .get("https://myasb.asbarcelona.com/grading/student/my_courses")
+        .header("Cookie", format!("sessionid={session_id}"))
+        .send()
+        .await
+        .unwrap();
+
+    let year_id = last(&mut resp.url().path_segments().unwrap())
+        .parse()
+        .unwrap();
+
+    let html = resp.text().await.unwrap();
+    let list = scraper::courses_list(&html);
+
+    Ok(Json(Courses {
+        year_id,
+        courses: list,
+    }))
+}
+
+#[debug_handler]
+pub async fn course(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Path((student, year, id)): Path<(u32, u32, u32)>,
+) -> Result<Json<Course>, StatusCode> {
+    let session_id = session_id(&headers)?;
+
+    let resp = state
+        .client
+        .get(format!(
+            "https://myasb.asbarcelona.com/grading/student/get_student_pws_course_grades/{}/{}/{}/",
+            student, year, id
+        ))
+        .header("Cookie", format!("sessionid={session_id}"))
+        .send()
+        .await
+        .unwrap();
+
+    let html = resp.text().await.unwrap();
+    let course = scraper::course(&html, id, year);
+
+    Ok(Json(course))
 }
