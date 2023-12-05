@@ -1,7 +1,11 @@
+use std::error::Error;
+
 use reqwest::Client;
 
 pub mod handlers;
 pub mod scraper;
+
+pub type AnyError = Box<dyn Error>;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -22,5 +26,5 @@ pub fn last<'a>(iter: &mut impl Iterator<Item = &'a str>) -> &'a str {
         last = next;
     }
 
-    return last.unwrap();
+    last.unwrap()
 }

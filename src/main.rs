@@ -1,5 +1,10 @@
+#![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::restriction)]
+
 use axum::{routing::get, Router};
-use myasb::AppState;
+use betterasb::{
+    handlers::{course, courses_list, home},
+    AppState,
+};
 use reqwest::Client;
 
 use tokio::net::TcpListener;
@@ -8,16 +13,16 @@ use tokio::net::TcpListener;
 async fn main() {
     let client: Client = Client::builder()
         .user_agent(format!(
-            "better-myasb/{} (Email: tarachmel@asbarcelona.com)",
+            "betterasb/{} (Email: tarachmel@asbarcelona.com)",
             env!("CARGO_PKG_VERSION")
         ))
         .build()
         .unwrap();
 
     let api = Router::new()
-        .route("/home", get(myasb::handlers::home))
-        .route("/courses/list", get(myasb::handlers::courses_list))
-        .route("/courses/:student/:year/:id", get(myasb::handlers::course))
+        .route("/home", get(home))
+        .route("/courses/list", get(courses_list))
+        .route("/courses/:student/:year/:id", get(course))
         .with_state(AppState { client });
 
     let app = Router::new().nest("/api", api);

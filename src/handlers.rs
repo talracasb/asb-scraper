@@ -4,11 +4,10 @@ use axum::{
     http::{HeaderMap, StatusCode},
     Json,
 };
-use serde::{Deserialize, Serialize};
 
 use crate::{
     last,
-    scraper::{self, Course, CourseListitem, Home},
+    scraper::{self, course::Course, courses_list::Courses, home::Home},
     AppState,
 };
 
@@ -40,15 +39,9 @@ pub async fn home(
         .unwrap();
 
     let html = resp.text().await.unwrap();
-    let home = scraper::home(&html);
+    let home = scraper::home::scrape(&html).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(home))
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct Courses {
-    pub year_id: u16,
-    pub courses: Box<[CourseListitem]>,
 }
 
 #[debug_handler]
@@ -66,17 +59,15 @@ pub async fn courses_list(
         .await
         .unwrap();
 
-    let year_id = last(&mut resp.url().path_segments().unwrap())
+    let year_id = last(&mut resp.url().path_segments().ok_or(StatusCode::BAD_REQUEST)?)
         .parse()
-        .unwrap();
+        .map_err(|_| StatusCode::BAD_REQUEST)?;
 
     let html = resp.text().await.unwrap();
-    let list = scraper::courses_list(&html);
+    let list = scraper::courses_list::scrape(&html, year_id)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    Ok(Json(Courses {
-        year_id,
-        courses: list,
-    }))
+    Ok(Json(list))
 }
 
 #[debug_handler]
@@ -99,7 +90,8 @@ pub async fn course(
         .unwrap();
 
     let html = resp.text().await.unwrap();
-    let course = scraper::course(&html, id, year);
+    let course =
+        scraper::course::scrape(&html, id, year).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(course))
 }
