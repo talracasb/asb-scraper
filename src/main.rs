@@ -3,6 +3,7 @@
 use axum::{routing::get, Router};
 use betterasb::{
     handlers::{course, courses_list, home},
+    scraper::parse_selectors,
     AppState,
 };
 use reqwest::Client;
@@ -26,6 +27,8 @@ async fn main() {
         .with_state(AppState { client });
 
     let app = Router::new().nest("/api", api);
+
+    parse_selectors();
 
     let listener = TcpListener::bind("0.0.0.0:3000").await.unwrap();
     axum::serve(listener, app).await.unwrap();

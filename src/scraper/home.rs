@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{scraper::ValueNone, AnyError};
 
-use super::single_elem_doc;
+use super::{single_elem_doc, Selectors};
 
 #[derive(Serialize, Deserialize)]
 pub struct Home {
@@ -15,8 +15,8 @@ pub struct Home {
 pub fn scrape(html: &str) -> Result<Home, AnyError> {
     let doc = scraper::Html::parse_document(html);
 
-    let day = single_elem_doc(&doc, "span.day-text")?.inner_html();
-    let name = single_elem_doc(&doc, "span.user-mini")?.inner_html();
+    let day = single_elem_doc(&doc, Selectors::HomeDay.selector())?.inner_html();
+    let name = single_elem_doc(&doc, Selectors::HomeName.selector())?.inner_html();
 
     let regex: Regex = Regex::new(r"(.*?) \((\d*)\)")?;
 

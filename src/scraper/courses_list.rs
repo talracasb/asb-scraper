@@ -1,4 +1,4 @@
-use scraper::{ElementRef, Html, Selector};
+use scraper::{ElementRef, Html};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -7,7 +7,9 @@ use crate::{
     AnyError,
 };
 
-#[derive(Serialize, Deserialize)]
+use super::Selectors;
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct CourseListitem {
     pub teacher: String,
     pub name: String,
@@ -16,41 +18,50 @@ pub struct CourseListitem {
     pub tardies: u32,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Courses {
     pub year_id: u16,
     pub courses: Box<[CourseListitem]>,
 }
 
-fn scrape_course(
-    course: &ElementRef,
-    course_name_selector: &Selector,
-    absences_selector: &Selector,
-    tardies_selector: &Selector,
-    teacher_name_selector: &Selector,
-) -> Result<CourseListitem, AnyError> {
-    let link_elem = single_elem_fragment(course, &course_name_selector)?;
+fn scrape_course(course: &ElementRef) -> Result<CourseListitem, AnyError> {
+    let link_elem = single_elem_fragment(course, Selectors::CourseListName.selector())?;
     let mut url = link_elem.attr("href").ok_or(ValueNone {})?.split('/');
 
     let id: u32 = last(&mut url).parse()?;
 
     let name = link_elem.inner_html();
-    let teacher = single_elem_fragment(&course, teacher_name_selector)?.inner_html();
+    let teacher =
+        single_elem_fragment(course, Selectors::CourseListTeacher.selector())?.inner_html();
 
-    fn after_colon(elem: &ElementRef) -> Result<u32, AnyError> {
-        let text = elem.text().next().ok_or(ValueNone {})?;
-        Ok(text[text.find(':').ok_or(ValueNone {})? + 1..]
+    // Seperate into seperate function eventually
+    let absences: u32 = match course
+        .select(Selectors::CourseListAbsences.selector())
+        .next()
+    {
+        Some(elem) => elem
+            .text()
+            .next()
+            .ok_or(ValueNone {})?
             .trim()
-            .parse()?)
-    }
-
-    let absences: u32 = match course.select(&absences_selector).next() {
-        Some(elem) => after_colon(&elem)?,
+            .strip_prefix("Absences: ")
+            .ok_or(ValueNone {})?
+            .parse()?,
         None => 0,
     };
 
-    let tardies: u32 = match course.select(&tardies_selector).next() {
-        Some(elem) => after_colon(&elem)?,
+    let tardies: u32 = match course
+        .select(Selectors::CourseListTardies.selector())
+        .next()
+    {
+        Some(elem) => elem
+            .text()
+            .next()
+            .ok_or(ValueNone {})?
+            .trim()
+            .strip_prefix("Tardies: ")
+            .ok_or(ValueNone {})?
+            .parse()?,
         None => 0,
     };
 
@@ -66,24 +77,9 @@ fn scrape_course(
 pub fn scrape(html: &str, year_id: u16) -> Result<Courses, AnyError> {
     let doc = Html::parse_document(html);
 
-    let course_name_selector = Selector::parse(".course-name-link")?;
-    let courses_selector = Selector::parse(".course-card-body")?;
-    let teacher_name_selector = Selector::parse(".teacher-name")?;
-
-    let absences_selector = Selector::parse(".absences-div > .attendance-text")?;
-    let tardies_selector = Selector::parse(".tardies-div > .attendance-text")?;
-
     let courses: Result<Box<[CourseListitem]>, AnyError> = doc
-        .select(&courses_selector)
-        .map(|course| {
-            scrape_course(
-                &course,
-                &course_name_selector,
-                &absences_selector,
-                &tardies_selector,
-                &teacher_name_selector,
-            )
-        })
+        .select(Selectors::CourseListEntry.selector())
+        .map(|course| scrape_course(&course))
         .collect();
 
     Ok(Courses {

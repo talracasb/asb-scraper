@@ -64,10 +64,9 @@ pub async fn courses_list(
         .map_err(|_| StatusCode::BAD_REQUEST)?;
 
     let html = resp.text().await.unwrap();
-    let list = scraper::courses_list::scrape(&html, year_id)
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let list = scraper::courses_list::scrape(&html, year_id);
 
-    Ok(Json(list))
+    Ok(Json(list.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?))
 }
 
 #[debug_handler]
