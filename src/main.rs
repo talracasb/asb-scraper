@@ -2,7 +2,7 @@
 
 use axum::{routing::get, Router};
 use betterasb::{
-    handlers::{course, courses_list, home},
+    handlers::{course, courses_list, home, schedule},
     scraper::parse_selectors,
     AppState,
 };
@@ -24,6 +24,7 @@ async fn main() {
         .route("/home", get(home))
         .route("/courses/list", get(courses_list))
         .route("/courses/:student/:year/:id", get(course))
+        .route("/schedule", get(schedule))
         .with_state(AppState { client });
 
     let app = Router::new().nest("/api", api);

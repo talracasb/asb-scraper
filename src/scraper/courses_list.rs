@@ -25,18 +25,18 @@ pub struct Courses {
 }
 
 fn scrape_course(course: &ElementRef) -> Result<CourseListitem, AnyError> {
-    let link_elem = single_elem_fragment(course, Selectors::CourseListName.selector())?;
+    let link_elem = single_elem_fragment(course, Selectors::CourseListEntryName.selector())?;
     let mut url = link_elem.attr("href").ok_or(ValueNone {})?.split('/');
 
     let id: u32 = last(&mut url).parse()?;
 
     let name = link_elem.inner_html();
     let teacher =
-        single_elem_fragment(course, Selectors::CourseListTeacher.selector())?.inner_html();
+        single_elem_fragment(course, Selectors::CourseListEntryTeacher.selector())?.inner_html();
 
     // Seperate into seperate function eventually
     let absences: u32 = match course
-        .select(Selectors::CourseListAbsences.selector())
+        .select(Selectors::CourseListEntryAbsences.selector())
         .next()
     {
         Some(elem) => elem
@@ -51,7 +51,7 @@ fn scrape_course(course: &ElementRef) -> Result<CourseListitem, AnyError> {
     };
 
     let tardies: u32 = match course
-        .select(Selectors::CourseListTardies.selector())
+        .select(Selectors::CourseListEntryTardies.selector())
         .next()
     {
         Some(elem) => elem

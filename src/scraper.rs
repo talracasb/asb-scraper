@@ -1,6 +1,7 @@
 pub mod course;
 pub mod courses_list;
 pub mod home;
+pub mod schedule;
 
 use scraper::{ElementRef, Html, Selector};
 use std::error::Error;
@@ -57,11 +58,20 @@ pub enum Selectors {
     CourseLBGrade,
     CourseTitle,
     CourseAttendence,
-    CourseListName,
+    CourseListEntryName,
     CourseListEntry,
-    CourseListTeacher,
-    CourseListAbsences,
-    CourseListTardies,
+    CourseListEntryTeacher,
+    CourseListEntryAbsences,
+    CourseListEntryTardies,
+    ScheduleStudent,
+    ScheduleHeaders,
+    ScheduleHeaderName,
+    ScheduleHeaderTime,
+    ScheduleDays,
+    ScheduleClasses,
+    ScheduleClassName,
+    ScheduleClassEmail,
+    ScheduleClassRoomAndID,
 }
 
 impl Selectors {
@@ -80,11 +90,20 @@ impl Selectors {
             Selectors::CourseLBGrade => ".learning-score",
             Selectors::CourseTitle => ".course-title",
             Selectors::CourseAttendence => ".attendance-text",
-            Selectors::CourseListName => ".course-name-link",
+            Selectors::CourseListEntryName => ".course-name-link",
             Selectors::CourseListEntry => ".course-card-body",
-            Selectors::CourseListTeacher => ".teacher-name",
-            Selectors::CourseListAbsences => ".absences-div > .attendance-text",
-            Selectors::CourseListTardies => ".tardies-div > .attendance-text",
+            Selectors::CourseListEntryTeacher => ".teacher-name",
+            Selectors::CourseListEntryAbsences => ".absences-div > .attendance-text",
+            Selectors::CourseListEntryTardies => ".tardies-div > .attendance-text",
+            Selectors::ScheduleStudent => ".schedule-content h1",
+            Selectors::ScheduleHeaders => ".schedule-content thead th.th-cell",
+            Selectors::ScheduleHeaderName => "strong",
+            Selectors::ScheduleHeaderTime => ".schedule-time",
+            Selectors::ScheduleDays => ".schedule-content tbody tr",
+            Selectors::ScheduleClasses => "td",
+            Selectors::ScheduleClassName => "strong",
+            Selectors::ScheduleClassEmail => "span.email-text",
+            Selectors::ScheduleClassRoomAndID => ".row",
         }
     }
 
