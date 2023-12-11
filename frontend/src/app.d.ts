@@ -9,12 +9,14 @@ declare global {
 	}
 }
 
+// /
 export interface Home {
 	day: string;
 	student_name: string;
 	student_id: number;
 }
 
+// /grades
 export interface CoursesListEntry {
 	teacher: string;
 	name: string;
@@ -29,6 +31,7 @@ export interface CoursesList {
 	courses: CoursesListEntry[];
 }
 
+// /grades/[student]/[year]/[id]
 export interface Standard {
 	grade: number;
 	name: string;
@@ -51,4 +54,29 @@ export interface Course {
 	tardies: number;
 	absences: number;
 	assignments: Assignment[];
+}
+
+// /schedule
+
+export interface Period {
+	name: string,
+	time: string,
+	visible: boolean,
+}
+
+export interface Class {
+	id: string,
+	name: string,
+	teacher: string,
+	email: string,
+	room: string,
+	color: string,
+}
+
+export interface Schedule {
+	student: string,
+	term: string,
+	homeroom: string,
+	header: Period[]
+	days: Class[][]
 }

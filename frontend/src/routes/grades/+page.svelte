@@ -7,7 +7,7 @@
 <h1>Courses</h1>
 
 <div>
-	{#each data.courses as course, i}
+	{#each data.courses as course}
 		<div>
 			<a href="/grades/{data.student_id}/{data.year_id}/{course.id}">{course.name}</a>
 			<p>{course.teacher}</p>
