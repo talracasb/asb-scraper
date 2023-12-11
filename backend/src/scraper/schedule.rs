@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::AnyError;
 
-use super::{single_elem_fragment, ValueNone, single_elem_doc, Selectors};
+use super::{single_elem_doc, single_elem_fragment, Selectors, ValueNone};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Period {
@@ -35,14 +35,7 @@ pub struct Schedule {
 }
 
 fn visible(elem: &ElementRef) -> bool {
-    match elem.attr("data-period") {
-        Some(class) => match class {
-            "3" => false,
-            "6" => false,
-            _ => true,
-        },
-        None => false,
-    }
+    !matches!(elem.attr("data-period"), Some("3") | Some("6"))
 }
 
 pub fn scrape(html: &str) -> Result<Schedule, AnyError> {
@@ -52,9 +45,11 @@ pub fn scrape(html: &str) -> Result<Schedule, AnyError> {
         .select(Selectors::ScheduleHeaders.selector())
         .map(|period| {
             Ok(Period {
-                name: single_elem_fragment(&period, Selectors::ScheduleHeaderName.selector())?.inner_html(),
-                time: single_elem_fragment(&period, Selectors::ScheduleHeaderTime.selector())?.inner_html(),
-                visible: visible(&period)
+                name: single_elem_fragment(&period, Selectors::ScheduleHeaderName.selector())?
+                    .inner_html(),
+                time: single_elem_fragment(&period, Selectors::ScheduleHeaderTime.selector())?
+                    .inner_html(),
+                visible: visible(&period),
             })
         })
         .collect();
@@ -64,13 +59,20 @@ pub fn scrape(html: &str) -> Result<Schedule, AnyError> {
         .map(|day| {
             day.select(Selectors::ScheduleClasses.selector())
                 .map(|class| {
-                    let mut room_id = class.select(Selectors::ScheduleClassRoomAndID.selector()).next()?.text();
+                    let mut room_id = class
+                        .select(Selectors::ScheduleClassRoomAndID.selector())
+                        .next()?
+                        .text();
 
-                    let name = class.select(Selectors::ScheduleClassName.selector()).next()?;
+                    let name = class
+                        .select(Selectors::ScheduleClassName.selector())
+                        .next()?;
                     let teacher = class.text().nth(2)?;
-                    let email = class.select(Selectors::ScheduleClassEmail.selector()).next()?;
+                    let email = class
+                        .select(Selectors::ScheduleClassEmail.selector())
+                        .next()?;
 
-                    let color = class.attr("class")?.strip_prefix("schedule-color")?;
+                    let color = class.attr("class")?.strip_prefix("schedule-color-")?;
 
                     Some(Class {
                         name: name.inner_html(),
@@ -86,7 +88,7 @@ pub fn scrape(html: &str) -> Result<Schedule, AnyError> {
         .collect();
 
     let student = single_elem_doc(&doc, Selectors::ScheduleStudent.selector())?.inner_html();
-    
+
     let regex = Regex::new(r"(.+) \((.+)\) - (.*)")?;
     let captures = regex.captures(&student).ok_or(ValueNone {})?;
 

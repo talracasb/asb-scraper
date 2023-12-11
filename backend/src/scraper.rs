@@ -1,13 +1,12 @@
 pub mod course;
 pub mod courses_list;
 pub mod home;
+pub mod lunch_menus;
 pub mod schedule;
 
 use scraper::{ElementRef, Html, Selector};
 use std::error::Error;
 use tokio::sync::OnceCell;
-
-use crate::AnyError;
 
 #[derive(Debug)]
 pub struct ValueNone {}
@@ -23,22 +22,23 @@ impl Error for ValueNone {
         None
     }
 
-    fn cause(&self) -> Option<&dyn Error> {
+    fn cause(&self) -> Option<&(dyn Error + 'static)> {
         self.source()
     }
 }
 
-pub fn single_elem_doc<'a>(doc: &'a Html, selector: &Selector) -> Result<ElementRef<'a>, AnyError> {
-    let elem = doc.select(selector).next().ok_or(ValueNone {})?;
-    Ok(elem)
+pub fn single_elem_doc<'a>(
+    doc: &'a Html,
+    selector: &Selector,
+) -> Result<ElementRef<'a>, ValueNone> {
+    doc.select(selector).next().ok_or(ValueNone {})
 }
 
 pub fn single_elem_fragment<'a>(
-    doc: &'a ElementRef,
+    fragment: &'a ElementRef,
     selector: &Selector,
-) -> Result<ElementRef<'a>, AnyError> {
-    let elem = doc.select(selector).next().ok_or(ValueNone {})?;
-    Ok(elem)
+) -> Result<ElementRef<'a>, ValueNone> {
+    fragment.select(selector).next().ok_or(ValueNone {})
 }
 
 static SELECTORS: OnceCell<Box<[Selector]>> = OnceCell::const_new();
@@ -72,6 +72,7 @@ pub enum Selectors {
     ScheduleClassName,
     ScheduleClassEmail,
     ScheduleClassRoomAndID,
+    LunchMenu,
 }
 
 impl Selectors {
@@ -104,16 +105,17 @@ impl Selectors {
             Selectors::ScheduleClassName => "strong",
             Selectors::ScheduleClassEmail => "span.email-text",
             Selectors::ScheduleClassRoomAndID => ".row",
+            Selectors::LunchMenu => ".row > .col-12 > a",
         }
     }
 
-    pub fn selector(&self) -> &Selector {
-        &SELECTORS.get().unwrap()[*self as usize]
+    pub fn selector(self) -> &'static Selector {
+        &SELECTORS.get().unwrap()[self as usize]
     }
 }
 
 pub fn parse_selectors() {
-    let selectors: Box<[Selector]> = (0..18)
+    let selectors: Box<[Selector]> = (0..=27)
         .map(|x: u8| {
             let selector = unsafe { std::mem::transmute::<u8, Selectors>(x) };
 

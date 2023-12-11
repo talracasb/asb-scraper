@@ -7,8 +7,10 @@ use axum::{
 use reqwest::Response;
 
 use crate::{
-    last,
-    scraper::{self, course::Course, courses_list::Courses, home::Home, schedule::Schedule},
+    scraper::{
+        self, course::Course, courses_list::Courses, home::Home, lunch_menus::LunchMenus,
+        schedule::Schedule,
+    },
     AppState,
 };
 
@@ -42,7 +44,7 @@ pub async fn home(
 ) -> Result<Json<Home>, StatusCode> {
     let resp = session_get(
         &state,
-        &session_id(&headers)?,
+        session_id(&headers)?,
         "https://myasb.asbarcelona.com",
     )
     .await;
@@ -60,17 +62,14 @@ pub async fn courses_list(
 ) -> Result<Json<Courses>, StatusCode> {
     let resp = session_get(
         &state,
-        &session_id(&headers)?,
+        session_id(&headers)?,
         "https://myasb.asbarcelona.com/grading/student/my_courses",
     )
     .await;
 
-    let year_id = last(&mut resp.url().path_segments().ok_or(StatusCode::BAD_REQUEST)?)
-        .parse()
-        .map_err(|_| StatusCode::BAD_REQUEST)?;
-
+    let url = resp.url().clone();
     let html = resp.text().await.unwrap();
-    let list = scraper::courses_list::scrape(&html, year_id)
+    let list = scraper::courses_list::scrape(&html, &url)
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(list))
@@ -84,7 +83,7 @@ pub async fn course(
 ) -> Result<Json<Course>, StatusCode> {
     let resp = session_get(
         &state,
-        &session_id(&headers)?,
+        session_id(&headers)?,
         &format!(
             "https://myasb.asbarcelona.com/grading/student/get_student_pws_course_grades/{}/{}/{}/",
             student, year, id
@@ -93,8 +92,8 @@ pub async fn course(
     .await;
 
     let html = resp.text().await.unwrap();
-    let course =
-        scraper::course::scrape(&html, id, year).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let course = scraper::course::scrape(&html, id, year, student)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(course))
 }
@@ -106,13 +105,33 @@ pub async fn schedule(
 ) -> Result<Json<Schedule>, StatusCode> {
     let resp = session_get(
         &state,
-        &session_id(&headers)?,
+        session_id(&headers)?,
         "https://myasb.asbarcelona.com/portal/myschedule/",
     )
     .await;
 
     let html = resp.text().await.unwrap();
-    let schedule = scraper::schedule::scrape(&html).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let schedule =
+        scraper::schedule::scrape(&html).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(schedule))
+}
+
+#[debug_handler]
+pub async fn lunch_menus(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+) -> Result<Json<LunchMenus>, StatusCode> {
+    let resp = session_get(
+        &state,
+        session_id(&headers)?,
+        "https://myasb.asbarcelona.com/pages/lunch-menus/",
+    )
+    .await;
+
+    let html = resp.text().await.unwrap();
+    let menus =
+        scraper::lunch_menus::scrape(&html).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(menus))
 }

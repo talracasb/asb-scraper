@@ -21,7 +21,7 @@
                 }
             },
             "args": [],
-            "cwd": "${workspaceFolder}"
+            "cwd": "backend/${workspaceFolder}"
         },
         {
             "type": "lldb",
@@ -39,7 +39,7 @@
                 }
             },
             "args": [],
-            "cwd": "${workspaceFolder}"
+            "cwd": "backend/${workspaceFolder}"
         },
         {
             "type": "lldb",
@@ -58,7 +58,7 @@
                 }
             },
             "args": [],
-            "cwd": "${workspaceFolder}"
+            "cwd": "backend/${workspaceFolder}"
         }
     ]
 }

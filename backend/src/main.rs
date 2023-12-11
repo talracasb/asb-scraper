@@ -2,13 +2,14 @@
 
 use axum::{routing::get, Router};
 use betterasb::{
-    handlers::{course, courses_list, home, schedule},
+    handlers::{course, courses_list, home, lunch_menus, schedule},
     scraper::parse_selectors,
     AppState,
 };
 use reqwest::Client;
 
 use tokio::net::TcpListener;
+use tower_http::cors::CorsLayer;
 
 #[tokio::main]
 async fn main() {
@@ -25,9 +26,12 @@ async fn main() {
         .route("/courses/list", get(courses_list))
         .route("/courses/:student/:year/:id", get(course))
         .route("/schedule", get(schedule))
+        .route("/lunch-menus", get(lunch_menus))
         .with_state(AppState { client });
 
-    let app = Router::new().nest("/api", api);
+    let app = Router::new()
+        .nest("/api", api)
+        .layer(CorsLayer::permissive());
 
     parse_selectors();
 

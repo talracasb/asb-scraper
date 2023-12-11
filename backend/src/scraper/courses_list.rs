@@ -2,7 +2,6 @@ use scraper::{ElementRef, Html};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    last,
     scraper::{single_elem_fragment, ValueNone},
     AnyError,
 };
@@ -21,6 +20,7 @@ pub struct CourseListitem {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Courses {
     pub year_id: u16,
+    pub student_id: u32,
     pub courses: Box<[CourseListitem]>,
 }
 
@@ -28,7 +28,7 @@ fn scrape_course(course: &ElementRef) -> Result<CourseListitem, AnyError> {
     let link_elem = single_elem_fragment(course, Selectors::CourseListEntryName.selector())?;
     let mut url = link_elem.attr("href").ok_or(ValueNone {})?.split('/');
 
-    let id: u32 = last(&mut url).parse()?;
+    let id: u32 = url.nth(6).ok_or(ValueNone {})?.parse()?;
 
     let name = link_elem.inner_html();
     let teacher =
@@ -74,8 +74,22 @@ fn scrape_course(course: &ElementRef) -> Result<CourseListitem, AnyError> {
     })
 }
 
-pub fn scrape(html: &str, year_id: u16) -> Result<Courses, AnyError> {
+pub fn scrape(html: &str, url: &reqwest::Url) -> Result<Courses, AnyError> {
     let doc = Html::parse_document(html);
+
+    let year_id = url
+        .path_segments()
+        .ok_or(ValueNone {})?
+        .nth(4)
+        .ok_or(ValueNone {})?
+        .parse()?;
+
+    let student_id = url
+        .path_segments()
+        .ok_or(ValueNone {})?
+        .nth(3)
+        .ok_or(ValueNone {})?
+        .parse()?;
 
     let courses: Result<Box<[CourseListitem]>, AnyError> = doc
         .select(Selectors::CourseListEntry.selector())
@@ -85,5 +99,6 @@ pub fn scrape(html: &str, year_id: u16) -> Result<Courses, AnyError> {
     Ok(Courses {
         courses: courses?,
         year_id,
+        student_id,
     })
 }

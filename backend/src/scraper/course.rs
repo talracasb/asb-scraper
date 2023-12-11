@@ -28,6 +28,7 @@ pub struct Assignment {
 pub struct Course {
     pub id: u32,
     pub year_id: u32,
+    pub student_id: u32,
     pub name: String,
     pub teacher: String,
     pub tardies: u32,
@@ -68,7 +69,7 @@ fn scrape_assignment(assignment: &ElementRef) -> Result<Assignment, AnyError> {
     })
 }
 
-pub fn scrape(html: &str, id: u32, year_id: u32) -> Result<Course, AnyError> {
+pub fn scrape(html: &str, id: u32, year_id: u32, student_id: u32) -> Result<Course, AnyError> {
     let doc = Html::parse_document(html);
 
     let title = single_elem_doc(&doc, Selectors::CourseTitle.selector())?.inner_html();
@@ -100,6 +101,7 @@ pub fn scrape(html: &str, id: u32, year_id: u32) -> Result<Course, AnyError> {
         teacher: String::from(captures[2].trim()),
         id,
         year_id,
+        student_id,
         tardies,
         absences,
     })

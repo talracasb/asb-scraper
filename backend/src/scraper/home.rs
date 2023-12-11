@@ -9,7 +9,7 @@ use super::{single_elem_doc, Selectors};
 pub struct Home {
     pub day: String,
     pub student_name: String,
-    pub student_id: String,
+    pub student_id: u32,
 }
 
 pub fn scrape(html: &str) -> Result<Home, AnyError> {
@@ -25,6 +25,6 @@ pub fn scrape(html: &str) -> Result<Home, AnyError> {
     Ok(Home {
         day,
         student_name: String::from(&captures[1]),
-        student_id: String::from(&captures[2]),
+        student_id: String::from(&captures[2]).parse()?,
     })
 }
