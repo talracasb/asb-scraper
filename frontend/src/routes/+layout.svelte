@@ -1,16 +1,16 @@
 <script lang="ts">
-	import Navbar from "$lib/Navbar.svelte";
+	import Navbar from '$lib/Navbar.svelte';
 </script>
 
 <Navbar />
 
 <main>
-    <slot />
+	<slot />
 </main>
 
 <style lang="less">
-    main {
-        padding: 1rem;
-        padding-top: 5em;
-    }
+	main {
+		padding: 1rem;
+		padding-top: 5em;
+	}
 </style>

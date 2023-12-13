@@ -1,3 +1,5 @@
+import { dev } from "$app/environment";
+
 export const prerender = true;
-//export const csr = false;
-export const trailingSlash = "never";
+export const csr = dev;
+export const trailingSlash = 'never';

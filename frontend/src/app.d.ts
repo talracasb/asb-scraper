@@ -59,24 +59,24 @@ export interface Course {
 // /schedule
 
 export interface Period {
-	name: string,
-	time: string,
-	visible: boolean,
+	name: string;
+	time: string;
+	visible: boolean;
 }
 
 export interface Class {
-	id: string,
-	name: string,
-	teacher: string,
-	email: string,
-	room: string,
-	color: string,
+	id: string;
+	name: string;
+	teacher: string;
+	email: string;
+	room: string;
+	color: string;
 }
 
 export interface Schedule {
-	student: string,
-	term: string,
-	homeroom: string,
-	header: Period[]
-	days: Class[][]
+	student: string;
+	term: string;
+	homeroom: string;
+	header: Period[];
+	days: Class[][];
 }
