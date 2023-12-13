@@ -17,10 +17,10 @@ use crate::{
 // Helper function to get the session ID from the header map and return HTTP 400 if it doesn't exist.
 fn session_id(headers: &HeaderMap) -> Result<&str, StatusCode> {
     let Some(session_id) = headers.get("SessionID") else {
-        return Err(StatusCode::BAD_REQUEST);
+        return Err(StatusCode::UNAUTHORIZED);
     };
     let Ok(session_id) = session_id.to_str() else {
-        return Err(StatusCode::BAD_REQUEST);
+        return Err(StatusCode::UNAUTHORIZED);
     };
 
     Ok(session_id)
